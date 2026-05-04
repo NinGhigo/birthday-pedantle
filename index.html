@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Birthday</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: linear-gradient(160deg, #fff0f5 0%, #fffde7 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container { max-width: 760px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header { text-align: center; padding: 48px 0 32px; }
+
+    h1 {
+      font-size: clamp(2em, 6vw, 3.2em);
+      color: #c0105a;
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 12px rgba(192,16,90,0.15);
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 1em;
+      font-style: italic;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    /* ── Progress ── */
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88em;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar { height: 10px; background: #f5e0ec; border-radius: 5px; overflow: hidden; }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #e91e8c, #f4a261);
+      border-radius: 5px;
+      transition: width 0.5s ease;
+    }
+
+    /* ── Input ── */
+    .input-row { display: flex; gap: 10px; }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 11px 16px;
+      font-size: 1.05em;
+      font-family: inherit;
+      border: 2px solid #fbbfd0;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: #e91e8c; }
+
+    input.wrong {
+      animation: shake 0.35s ease;
+      border-color: #e74c3c !important;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      60%      { transform: translateX(8px); }
+    }
+
+    button {
+      padding: 11px 22px;
+      background: linear-gradient(135deg, #e91e8c, #c0105a);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05em;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 3px 10px rgba(225,30,140,0.35);
+    }
+
+    button:hover  { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(225,30,140,0.45); }
+    button:active { transform: translateY(0);    box-shadow: 0 2px 6px  rgba(225,30,140,0.3); }
+
+    .feedback { min-height: 22px; font-size: 0.9em; margin-top: 8px; text-align: center; }
+
+    /* ── Text ── */
+    .text-display {
+      line-height: 2.5em;
+      font-size: 1.05em;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .word-hidden {
+      display: inline-block;
+      background: #e2e2e2;
+      border-radius: 4px;
+      color: transparent;
+      vertical-align: middle;
+      height: 1.05em;
+      cursor: default;
+      user-select: none;
+      margin: 0 1px;
+      transition: background 0.2s;
+    }
+
+    .word-revealed {
+      display: inline;
+      color: #c0105a;
+      font-weight: 700;
+    }
+
+    @keyframes pop {
+      0%   { opacity: 0; transform: scale(0.6); }
+      65%  { transform: scale(1.15); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .word-just-revealed { animation: pop 0.35s ease forwards; }
+
+    /* ── Guessed list ── */
+    .guessed-title {
+      font-size: 0.78em;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    .guessed-words { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .guessed-tag {
+      background: #fff0f8;
+      border: 1px solid #f7b8d5;
+      color: #c0105a;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 0.88em;
+    }
+
+    /* ── Win overlay ── */
+    .win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(30,0,20,0.55);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .win-overlay.active { display: flex; }
+
+    .win-card {
+      background: white;
+      border-radius: 24px;
+      padding: 52px 60px;
+      text-align: center;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .win-card .big-emoji { font-size: 3.5em; margin-bottom: 16px; }
+    .win-card h2  { font-size: 2.2em; color: #c0105a; margin-bottom: 12px; }
+    .win-card p   { color: #666; font-size: 1.15em; line-height: 1.6; }
+
+    .win-card .close-btn {
+      margin-top: 28px;
+      background: linear-gradient(135deg, #e91e8c, #c0105a);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 28px;
+      font-size: 1em;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(225,30,140,0.35);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🎂 Happy Birthday 🎂</h1>
+    <p class="subtitle">Guess words to reveal the hidden text</p>
+  </header>
+
+  <div class="card">
+    <div class="progress-label">
+      <span>Words discovered</span>
+      <span id="prog-text">0 / 0 unique words</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="prog-fill"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="guess-input"
+             placeholder="Type a word and press Enter…"
+             autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false" />
+      <button onclick="submitGuess()">Guess</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div class="card">
+    <div class="text-display" id="text-display"></div>
+  </div>
+
+  <div class="card">
+    <p class="guessed-title">Guessed words</p>
+    <div class="guessed-words" id="guessed-words"></div>
+  </div>
+
+</div>
+
+<!-- Win screen -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-card">
+    <div class="big-emoji">🎉🎂🎉</div>
+    <h2>Happy Birthday!</h2>
+    <p>You uncovered the whole text!<br><br>Happy birthday my love! ♥</p>
+    <button class="close-btn"
+            onclick="document.getElementById('win-overlay').classList.remove('active')">
+      Close
+    </button>
+  </div>
+</div>
+
+<script>
+  const SOURCE_TEXT =
+`A birthday is the anniversary of the birth of a person or the figurative birth of an institution. Birthdays of people are celebrated in numerous cultures, often with birthday gifts, birthday cards, a birthday party, or a rite of passage.
+Many religions celebrate the birth of their founders or religious figures with special holidays (e.g. Christmas, Mawlid, Buddha's Birthday, Krishna Janmashtami, and Gurpurb).
+There is a distinction between birthday and birthdate (also known as date of birth): the former, except for February 29, occurs each year (e.g. June 03), while the latter is the complete date when a person was born (e.g. June 03, 1993).
+Happy birthday my love!`;
+
+  // ── Tokenize ──────────────────────────────────────────────────────────
+  // Words = sequences of letters/digits. Everything else stays visible.
+  const tokens     = [];   // {type:'word'|'punct', value, id?, norm?, revealed?}
+  const wordById   = {};   // id → token
+  const wordIndex  = {};   // normalised → [id, ...]
+  let   nextId     = 0;
+
+  let cursor = 0;
+  const WORD_RE = /[A-Za-z0-9]+/g;
+  let m;
+  while ((m = WORD_RE.exec(SOURCE_TEXT)) !== null) {
+    if (m.index > cursor) {
+      tokens.push({ type: 'punct', value: SOURCE_TEXT.slice(cursor, m.index) });
+    }
+    const id  = nextId++;
+    const tok = { type: 'word', value: m[0], norm: m[0].toLowerCase(), id, revealed: false };
+    tokens.push(tok);
+    wordById[id] = tok;
+    (wordIndex[tok.norm] = wordIndex[tok.norm] || []).push(id);
+    cursor = m.index + m[0].length;
+  }
+  if (cursor < SOURCE_TEXT.length) {
+    tokens.push({ type: 'punct', value: SOURCE_TEXT.slice(cursor) });
+  }
+
+  const totalUnique    = Object.keys(wordIndex).length;
+  let   revealedUnique = 0;
+  const guessed        = new Set();
+
+  // ── Build the text display ────────────────────────────────────────────
+  const display = document.getElementById('text-display');
+  tokens.forEach(tok => {
+    if (tok.type === 'punct') {
+      display.appendChild(document.createTextNode(tok.value));
+    } else {
+      const span = document.createElement('span');
+      span.id        = `w${tok.id}`;
+      span.className = 'word-hidden';
+      span.style.width = (tok.value.length * 0.65) + 'em';
+      span.textContent = tok.value; // invisible (color: transparent)
+      display.appendChild(span);
+    }
+  });
+
+  updateProgress();
+  document.getElementById('guess-input').focus();
+
+  // ── Game logic ────────────────────────────────────────────────────────
+  function submitGuess() {
+    const input = document.getElementById('guess-input');
+    const raw   = input.value.trim();
+    input.value = '';
+    input.focus();
+    if (!raw) return;
+
+    const norm = raw.toLowerCase();
+
+    if (guessed.has(norm)) {
+      showFeedback(`"${raw}" was already found!`, '#f39c12');
+      return;
+    }
+
+    if (!wordIndex[norm]) {
+      showFeedback(`"${raw}" is not in the text`, '#e74c3c');
+      input.classList.remove('wrong');
+      void input.offsetWidth; // force reflow to restart animation
+      input.classList.add('wrong');
+      setTimeout(() => input.classList.remove('wrong'), 400);
+      return;
+    }
+
+    // Reveal every instance
+    wordIndex[norm].forEach(id => {
+      const tok  = wordById[id];
+      tok.revealed = true;
+      const span = document.getElementById(`w${id}`);
+      span.className   = 'word-revealed word-just-revealed';
+      span.style.width = '';
+      span.textContent = tok.value;
+      setTimeout(() => span.classList.remove('word-just-revealed'), 400);
+    });
+
+    guessed.add(norm);
+    revealedUnique++;
+    updateProgress();
+
+    const count = wordIndex[norm].length;
+    addTag(norm, count);
+    showFeedback(`✓ "${raw}" — found ${count} time${count > 1 ? 's' : ''}!`, '#27ae60');
+
+    if (revealedUnique === totalUnique) {
+      setTimeout(() => document.getElementById('win-overlay').classList.add('active'), 700);
+    }
+  }
+
+  function showFeedback(msg, color) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.style.color  = color;
+  }
+
+  function updateProgress() {
+    document.getElementById('prog-text').textContent =
+      `${revealedUnique} / ${totalUnique} unique words`;
+    document.getElementById('prog-fill').style.width =
+      (totalUnique ? revealedUnique / totalUnique * 100 : 0) + '%';
+  }
+
+  function addTag(word, count) {
+    const tag = document.createElement('span');
+    tag.className   = 'guessed-tag';
+    tag.textContent = count > 1 ? `${word} (×${count})` : word;
+    document.getElementById('guessed-words').prepend(tag);
+  }
+
+  // Enter key
+  document.getElementById('guess-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitGuess();
+  });
+</script>
+</body>
+</html>

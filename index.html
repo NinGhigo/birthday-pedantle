@@ -62,6 +62,40 @@
       transition: width 0.5s ease;
     }
 
+    .target-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #f5e0ec;
+    }
+
+    .target-label {
+      font-size: 0.88em;
+      color: #aaa;
+    }
+
+    .target-badge {
+      font-size: 0.88em;
+      padding: 3px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .target-badge.locked {
+      background: #f0f0f0;
+      color: #bbb;
+      letter-spacing: 0.08em;
+    }
+
+    .target-badge.found {
+      background: #fff8e1;
+      border: 1px solid #f9c74f;
+      color: #e8960c;
+    }
+
     /* ── Input ── */
     .input-row { display: flex; gap: 10px; }
 
@@ -135,6 +169,13 @@
       font-weight: 700;
     }
 
+    .word-target-revealed {
+      display: inline;
+      color: #e8960c;
+      font-weight: 800;
+      text-shadow: 0 0 10px rgba(232, 150, 12, 0.45);
+    }
+
     @keyframes pop {
       0%   { opacity: 0; transform: scale(0.6); }
       65%  { transform: scale(1.15); }
@@ -161,6 +202,13 @@
       padding: 3px 12px;
       border-radius: 20px;
       font-size: 0.88em;
+    }
+
+    .guessed-tag.target-tag {
+      background: #fff8e1;
+      border: 1px solid #f9c74f;
+      color: #e8960c;
+      font-weight: 700;
     }
 
     /* ── Win overlay ── */
@@ -194,11 +242,27 @@
     }
 
     .win-card .big-emoji { font-size: 3.5em; margin-bottom: 16px; }
-    .win-card h2  { font-size: 2.2em; color: #c0105a; margin-bottom: 12px; }
+    .win-card h2  { font-size: 2.2em; color: #e8960c; margin-bottom: 8px; }
+
+    .win-card .found-word {
+      font-size: 2em;
+      font-weight: 800;
+      color: #e8960c;
+      text-shadow: 0 0 16px rgba(232, 150, 12, 0.4);
+      margin: 12px 0 20px;
+    }
+
     .win-card p   { color: #666; font-size: 1.15em; line-height: 1.6; }
 
-    .win-card .close-btn {
+    .win-card .btn-row {
       margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .win-card .close-btn {
       background: linear-gradient(135deg, #e91e8c, #c0105a);
       color: white;
       border: none;
@@ -208,23 +272,58 @@
       cursor: pointer;
       box-shadow: 0 3px 10px rgba(225,30,140,0.35);
     }
+
+    .win-card .reveal-btn {
+      background: white;
+      color: #c0105a;
+      border: 2px solid #f7b8d5;
+      border-radius: 10px;
+      padding: 10px 28px;
+      font-size: 1em;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .reveal-all-bar {
+      display: none;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    .reveal-all-bar button {
+      background: white;
+      color: #c0105a;
+      border: 2px solid #f7b8d5;
+      box-shadow: none;
+      font-size: 0.95em;
+      padding: 8px 20px;
+    }
+
+    .reveal-all-bar button:hover {
+      background: #fff0f8;
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
 <div class="container">
 
   <header>
-    <h1>🎂 Happy Birthday 🎂</h1>
-    <p class="subtitle">Guess words to reveal the hidden text</p>
+    <h1 id="main-title">Find the secret word</h1>
+    <p class="subtitle">Guess words to reveal the text — can you find the secret word?</p>
   </header>
 
   <div class="card">
     <div class="progress-label">
-      <span>Words discovered</span>
-      <span id="prog-text">0 / 0 unique words</span>
+      <span>Words revealed</span>
+      <span id="prog-text">0 / 0 words</span>
     </div>
     <div class="progress-bar">
       <div class="progress-fill" id="prog-fill"></div>
+    </div>
+    <div class="target-row">
+      <span class="target-label">Secret word:</span>
+      <span class="target-badge locked" id="target-badge">🔒 ???</span>
     </div>
   </div>
 
@@ -237,6 +336,9 @@
       <button onclick="submitGuess()">Guess</button>
     </div>
     <div class="feedback" id="feedback"></div>
+    <div class="reveal-all-bar" id="reveal-all-bar">
+      <button onclick="revealAll()">Reveal all remaining words</button>
+    </div>
   </div>
 
   <div class="card">
@@ -254,12 +356,19 @@
 <div class="win-overlay" id="win-overlay">
   <div class="win-card">
     <div class="big-emoji">🎉🎂🎉</div>
-    <h2>Happy Birthday!</h2>
-    <p>You uncovered the whole text!<br><br>Happy birthday my love! ♥</p>
-    <button class="close-btn"
-            onclick="document.getElementById('win-overlay').classList.remove('active')">
-      Close
-    </button>
+    <h2>You found it!</h2>
+    <div class="found-word">birthday</div>
+    <p>You uncovered the secret word!<br><br>Happy birthday my love! ♥</p>
+    <div class="btn-row">
+      <button class="close-btn"
+              onclick="document.getElementById('win-overlay').classList.remove('active')">
+        Keep playing
+      </button>
+      <button class="reveal-btn"
+              onclick="revealAll()">
+        Reveal all
+      </button>
+    </div>
   </div>
 </div>
 
@@ -270,12 +379,51 @@ Many religions celebrate the birth of their founders or religious figures with s
 There is a distinction between birthday and birthdate (also known as date of birth): the former, except for February 29, occurs each year (e.g. June 03), while the latter is the complete date when a person was born (e.g. June 03, 1993).
 Happy birthday my love!`;
 
+  const TARGET_WORD = 'birthday';
+
+  // Each word form maps to its group key.
+  const WORD_GROUPS = {
+    // Articles
+    'a': 'article', 'an': 'article',
+
+    // Verbs
+    'be': 'be', 'am': 'be', 'is': 'be', 'are': 'be',
+    'was': 'be', 'were': 'be', 'been': 'be', 'being': 'be',
+
+    'celebrate': 'celebrate', 'celebrates': 'celebrate',
+    'celebrating': 'celebrate', 'celebrated': 'celebrate',
+
+    'know': 'know', 'knows': 'know', 'knew': 'know',
+    'known': 'know', 'knowing': 'know',
+
+    'occur': 'occur', 'occurs': 'occur', 'occurred': 'occur', 'occurring': 'occur',
+
+    'bear': 'bear', 'bears': 'bear', 'bore': 'bear',
+    'born': 'bear', 'borne': 'bear', 'bearing': 'bear',
+
+    // Singular ↔ plural
+    'birthday': 'birthday', 'birthdays': 'birthday',
+    'person': 'person',  'people': 'person',
+    'culture': 'culture', 'cultures': 'culture',
+    'founder': 'founder', 'founders': 'founder',
+    'gift': 'gift',     'gifts': 'gift',
+    'card': 'card',     'cards': 'card',
+    'holiday': 'holiday', 'holidays': 'holiday',
+
+    // Noun ↔ adjective (all forms present in the text)
+    'religion': 'religion', 'religions': 'religion', 'religious': 'religion',
+    'figure': 'figure',   'figures': 'figure',    'figurative': 'figure',
+
+    // Same root (only "distinction" is in the text, but "distinct" is the obvious guess)
+    'distinction': 'distinction', 'distinct': 'distinction', 'distinctive': 'distinction',
+  };
+
+
   // ── Tokenize ──────────────────────────────────────────────────────────
-  // Words = sequences of letters/digits. Everything else stays visible.
-  const tokens     = [];   // {type:'word'|'punct', value, id?, norm?, revealed?}
-  const wordById   = {};   // id → token
-  const wordIndex  = {};   // normalised → [id, ...]
-  let   nextId     = 0;
+  const tokens    = [];
+  const wordById  = {};
+  const wordIndex = {};
+  let   nextId    = 0;
 
   let cursor = 0;
   const WORD_RE = /[A-Za-z0-9]+/g;
@@ -295,9 +443,30 @@ Happy birthday my love!`;
     tokens.push({ type: 'punct', value: SOURCE_TEXT.slice(cursor) });
   }
 
-  const totalUnique    = Object.keys(wordIndex).length;
+  // Target word excluded from the progress count
+  const totalUnique    = Object.keys(wordIndex).filter(w => w !== TARGET_WORD).length;
   let   revealedUnique = 0;
-  const guessed        = new Set();
+  let   targetFound    = false;
+  const guessed        = new Set(); // stores lemma keys for verbs, exact words otherwise
+
+  // ── Verb helpers ──────────────────────────────────────────────────────
+
+  // Returns the group key for a word (lemma for verbs, the word itself for others).
+  function getGroupKey(norm) {
+    return WORD_GROUPS[norm] || norm;
+  }
+
+  // Returns every form of the same group that actually appears in the text,
+  // or [norm] for exact-match words, or null if nothing found.
+  function getFormsToReveal(norm) {
+    const lemma = WORD_GROUPS[norm];
+    if (lemma) {
+      const forms = Object.keys(WORD_GROUPS)
+        .filter(f => WORD_GROUPS[f] === lemma && wordIndex[f]);
+      return forms.length > 0 ? forms : null;
+    }
+    return wordIndex[norm] ? [norm] : null;
+  }
 
   // ── Build the text display ────────────────────────────────────────────
   const display = document.getElementById('text-display');
@@ -309,7 +478,7 @@ Happy birthday my love!`;
       span.id        = `w${tok.id}`;
       span.className = 'word-hidden';
       span.style.width = (tok.value.length * 0.65) + 'em';
-      span.textContent = tok.value; // invisible (color: transparent)
+      span.textContent = tok.value;
       display.appendChild(span);
     }
   });
@@ -325,43 +494,58 @@ Happy birthday my love!`;
     input.focus();
     if (!raw) return;
 
-    const norm = raw.toLowerCase();
+    const norm     = raw.toLowerCase();
+    const groupKey = getGroupKey(norm);
 
-    if (guessed.has(norm)) {
+    if (guessed.has(groupKey)) {
       showFeedback(`"${raw}" was already found!`, '#f39c12');
       return;
     }
 
-    if (!wordIndex[norm]) {
+    const formsToReveal = getFormsToReveal(norm);
+
+    if (!formsToReveal) {
       showFeedback(`"${raw}" is not in the text`, '#e74c3c');
       input.classList.remove('wrong');
-      void input.offsetWidth; // force reflow to restart animation
+      void input.offsetWidth;
       input.classList.add('wrong');
       setTimeout(() => input.classList.remove('wrong'), 400);
       return;
     }
 
-    // Reveal every instance
-    wordIndex[norm].forEach(id => {
-      const tok  = wordById[id];
-      tok.revealed = true;
-      const span = document.getElementById(`w${id}`);
-      span.className   = 'word-revealed word-just-revealed';
-      span.style.width = '';
-      span.textContent = tok.value;
-      setTimeout(() => span.classList.remove('word-just-revealed'), 400);
+    const isTarget = formsToReveal.includes(TARGET_WORD);
+    let totalCount = 0;
+
+    formsToReveal.forEach(f => {
+      wordIndex[f].forEach(id => {
+        const tok  = wordById[id];
+        tok.revealed = true;
+        const span = document.getElementById(`w${id}`);
+        span.className   = (f === TARGET_WORD ? 'word-target-revealed' : 'word-revealed') + ' word-just-revealed';
+        span.style.width = '';
+        span.textContent = tok.value;
+        setTimeout(() => span.classList.remove('word-just-revealed'), 400);
+      });
+      totalCount += wordIndex[f].length;
     });
 
-    guessed.add(norm);
-    revealedUnique++;
+    guessed.add(groupKey);
+    revealedUnique += formsToReveal.filter(f => f !== TARGET_WORD).length;
+    if (isTarget) targetFound = true;
     updateProgress();
 
-    const count = wordIndex[norm].length;
-    addTag(norm, count);
-    showFeedback(`✓ "${raw}" — found ${count} time${count > 1 ? 's' : ''}!`, '#27ae60');
+    // Forms revealed other than the one the user typed
+    const otherForms = formsToReveal.filter(f => f !== norm);
+    addTag(norm, totalCount, isTarget, otherForms);
 
-    if (revealedUnique === totalUnique) {
+    if (isTarget) {
+      showFeedback(`⭐ You found the secret word! — ${totalCount} instance${totalCount > 1 ? 's' : ''} revealed!`, '#e8960c');
+      document.getElementById('reveal-all-bar').style.display = 'block';
       setTimeout(() => document.getElementById('win-overlay').classList.add('active'), 700);
+    } else if (otherForms.length > 0) {
+      showFeedback(`✓ "${raw}" (+${otherForms.join(', ')}) — ${totalCount} instance${totalCount > 1 ? 's' : ''} revealed!`, '#27ae60');
+    } else {
+      showFeedback(`✓ "${raw}" — found ${totalCount} time${totalCount > 1 ? 's' : ''}!`, '#27ae60');
     }
   }
 
@@ -373,19 +557,45 @@ Happy birthday my love!`;
 
   function updateProgress() {
     document.getElementById('prog-text').textContent =
-      `${revealedUnique} / ${totalUnique} unique words`;
+      `${revealedUnique} / ${totalUnique} words`;
     document.getElementById('prog-fill').style.width =
       (totalUnique ? revealedUnique / totalUnique * 100 : 0) + '%';
+
+    const badge = document.getElementById('target-badge');
+    if (targetFound) {
+      badge.className   = 'target-badge found';
+      badge.textContent = '⭐ birthday';
+      document.getElementById('main-title').textContent = '🎂 Happy Birthday! 🎂';
+    }
   }
 
-  function addTag(word, count) {
+  function addTag(word, count, isTarget, otherForms) {
     const tag = document.createElement('span');
-    tag.className   = 'guessed-tag';
-    tag.textContent = count > 1 ? `${word} (×${count})` : word;
+    tag.className = isTarget ? 'guessed-tag target-tag' : 'guessed-tag';
+    let label = word;
+    if (otherForms.length > 0) label += ` (+${otherForms.join(', ')})`;
+    if (count > 1) label += ` ×${count}`;
+    tag.textContent = label;
     document.getElementById('guessed-words').prepend(tag);
   }
 
-  // Enter key
+  function revealAll() {
+    tokens.forEach(tok => {
+      if (tok.type === 'word' && !tok.revealed) {
+        tok.revealed = true;
+        const span = document.getElementById(`w${tok.id}`);
+        span.className   = 'word-revealed word-just-revealed';
+        span.style.width = '';
+        span.textContent = tok.value;
+        setTimeout(() => span.classList.remove('word-just-revealed'), 400);
+      }
+    });
+    revealedUnique = totalUnique;
+    updateProgress();
+    document.getElementById('reveal-all-bar').style.display = 'none';
+    document.getElementById('win-overlay').classList.remove('active');
+  }
+
   document.getElementById('guess-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitGuess();
   });
